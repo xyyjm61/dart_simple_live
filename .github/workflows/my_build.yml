@@ -1,0 +1,49 @@
+name: My Simple Build
+
+on:
+  workflow_dispatch: # 允许你手动点击按钮触发
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+      # 1. 拉取代码（关键：fetch-depth: 0 解决 git describe 报错问题）
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
+
+      # 2. 安装 Flutter 环境
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      # 3. 启用 Windows 桌面支持
+      - name: Enable Windows Desktop
+        run: flutter config --enable-windows-desktop
+
+      # 4. 获取项目依赖
+      - name: Get Dependencies
+        working-directory: ./simple_live_app # 必须进入 app 子目录
+        run: flutter pub get
+
+      # 5. 生成代码 (防止项目用了 build_runner 但没生成文件)
+      - name: Generate Code
+        working-directory: ./simple_live_app
+        run: dart run build_runner build --delete-conflicting-outputs
+        continue-on-error: true # 即使这步不需要，也不会卡死
+
+      # 6. 开始编译 EXE
+      - name: Build Windows EXE
+        working-directory: ./simple_live_app
+        run: flutter build windows --release
+
+      # 7. 打包并上传结果供你下载
+      - name: Upload EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: simple_live_windows_exe
+          path: simple_live_app/build/windows/x64/runner/Release/
