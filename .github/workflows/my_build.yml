@@ -1,20 +1,20 @@
 name: My Simple Build
 
 on:
-  workflow_dispatch: # 允许你手动点击按钮触发
+  workflow_dispatch: # 允许手动触发
 
 jobs:
   build-windows:
     runs-on: windows-latest
     
     steps:
-      # 1. 拉取代码（关键：fetch-depth: 0 解决 git describe 报错问题）
+      # 1. 拉取代码
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 
 
-      # 2. 安装 Flutter 环境
+      # 2. 安装 Flutter
       - name: Install Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -25,23 +25,32 @@ jobs:
       - name: Enable Windows Desktop
         run: flutter config --enable-windows-desktop
 
-      # 4. 获取项目依赖
-      - name: Get Dependencies
-        working-directory: ./simple_live_app # 必须进入 app 子目录
+      # =================================================
+      # 修复重点：先处理 simple_live_core 的依赖和代码生成
+      # =================================================
+      - name: Setup Core Library
+        working-directory: ./simple_live_core
+        run: |
+          flutter pub get
+          dart run build_runner build --delete-conflicting-outputs
+
+      # 4. 获取 App 依赖
+      - name: Get App Dependencies
+        working-directory: ./simple_live_app
         run: flutter pub get
 
-      # 5. 生成代码 (防止项目用了 build_runner 但没生成文件)
-      - name: Generate Code
+      # 5. 生成 App 的代码 (双重保险)
+      - name: Generate App Code
         working-directory: ./simple_live_app
         run: dart run build_runner build --delete-conflicting-outputs
-        continue-on-error: true # 即使这步不需要，也不会卡死
+        continue-on-error: true
 
       # 6. 开始编译 EXE
       - name: Build Windows EXE
         working-directory: ./simple_live_app
         run: flutter build windows --release
 
-      # 7. 打包并上传结果供你下载
+      # 7. 上传结果
       - name: Upload EXE
         uses: actions/upload-artifact@v4
         with:
