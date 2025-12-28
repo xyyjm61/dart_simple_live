@@ -1,4 +1,4 @@
-name: Fix and Build Windows
+name: Build Release Tag
 
 on:
   workflow_dispatch:
@@ -8,11 +8,25 @@ jobs:
     runs-on: windows-latest
     
     steps:
+      # 1. 拉取代码（获取所有历史，以便找到 Tag）
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 
 
+      # 2. 【核心修复】自动切换到最新的发行版 Tag
+      - name: Checkout Latest Tag
+        run: |
+          git fetch --tags
+          # 获取最新的 Tag 名称 (例如 v1.5.8)
+          $Tag = git describe --tags (git rev-list --tags --max-count=1)
+          Write-Host "Found latest tag: $Tag"
+          # 强制切换到该版本
+          git checkout $Tag
+          # 显示当前状态
+          git status
+
+      # 3. 安装 Flutter
       - name: Install Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -22,36 +36,27 @@ jobs:
       - name: Enable Windows Desktop
         run: flutter config --enable-windows-desktop
 
-      # =================================================
-      # 修复步骤：强制给 core 安装 build_runner 并运行
-      # =================================================
-      - name: Fix Core Generation
+      # 4. 这里的修复步骤依然保留，以防万一 Tag 版本也缺少 JSON 生成
+      - name: Ensure Core Dependencies
         working-directory: ./simple_live_core
         run: |
           flutter pub get
-          # 强制添加构建工具 (解决 "Could not find package" 错误)
+          # 尝试生成代码（如果 Tag 版文件齐全，这步会很快完成）
           flutter pub add -d build_runner
           flutter pub add -d json_serializable
-          # 尝试生成代码 (忽略非致命错误)
           dart run build_runner build --delete-conflicting-outputs
         continue-on-error: true
 
-      # =================================================
-      # App 编译步骤
-      # =================================================
+      # 5. App 依赖与编译
       - name: Get App Dependencies
         working-directory: ./simple_live_app
         run: flutter pub get
-
-      - name: Generate App Code
-        working-directory: ./simple_live_app
-        run: dart run build_runner build --delete-conflicting-outputs
-        continue-on-error: true
 
       - name: Build Windows EXE
         working-directory: ./simple_live_app
         run: flutter build windows --release
 
+      # 6. 上传成品
       - name: Upload EXE
         uses: actions/upload-artifact@v4
         with:
