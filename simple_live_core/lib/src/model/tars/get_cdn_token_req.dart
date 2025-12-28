@@ -1,50 +1,53 @@
-// ignore_for_file: no_leading_underscores_for_local_identifiers
 
 import 'package:tars_dart/tars/codec/tars_displayer.dart';
 import 'package:tars_dart/tars/codec/tars_input_stream.dart';
 import 'package:tars_dart/tars/codec/tars_output_stream.dart';
 import 'package:tars_dart/tars/codec/tars_struct.dart';
 
-class GetCdnTokenReq extends TarsStruct {
-  String url = "";
+import 'huya_user_id.dart';
 
-  String cdnType = "";
-
-  String streamName = "";
-
-  int presenterUid = 0;
+class GetCdnTokenExReq extends TarsStruct {
+  String sFlvUrl = ""; //tag 0
+  String sStreamName = ""; //tag 1
+  int iLoopTime = 0; //tag 2
+  HuyaUserId tId = HuyaUserId(); //tag 3
+  int iAppId = 66; //tag 4
 
   @override
   void readFrom(TarsInputStream _is) {
-    url = _is.read(url, 0, false);
-    cdnType = _is.read(cdnType, 1, false);
-    streamName = _is.read(streamName, 2, false);
-    presenterUid = _is.read(presenterUid, 3, false);
+    sFlvUrl = _is.read(sFlvUrl, 0, false);
+    sStreamName = _is.read(sStreamName, 1, false);
+    iLoopTime = _is.read(iLoopTime, 2, false);
+    tId = _is.read(tId, 3, false);
+    iAppId = _is.read(iAppId, 4, false);
   }
 
   @override
   void writeTo(TarsOutputStream _os) {
-    _os.write(url, 0);
-    _os.write(cdnType, 1);
-    _os.write(streamName, 2);
-    _os.write(presenterUid, 3);
+    _os.write(sFlvUrl, 0);
+    _os.write(sStreamName, 1);
+    _os.write(iLoopTime, 2);
+    _os.write(tId, 3);
+    _os.write(iAppId, 4);
   }
 
   @override
-  Object deepCopy() {
-    return GetCdnTokenReq()
-      ..url = url
-      ..cdnType = cdnType
-      ..streamName = streamName
-      ..presenterUid = presenterUid;
+  TarsStruct deepCopy() {
+    return GetCdnTokenExReq()
+      ..sFlvUrl = sFlvUrl
+      ..sStreamName = sStreamName
+      ..iLoopTime = iLoopTime
+      ..tId = tId
+      ..iAppId = iAppId;
   }
 
   @override
-  void displayAsString(StringBuffer sb, int level) {
+  displayAsString(StringBuffer sb, int level) {
     TarsDisplayer _ds = TarsDisplayer(sb, level: level);
-    _ds.DisplayString(url, "url");
-    _ds.DisplayString(cdnType, "cdnType");
-    _ds.DisplayString(streamName, "streamName");
-    _ds.DisplayInt(presenterUid, "presenterUid");
+    _ds.DisplayString(sFlvUrl, "sFlvUrl");
+    _ds.DisplayString(sStreamName, "sStreamName");
+    _ds.DisplayInt(iLoopTime, "iLoopTime");
+    _ds.DisplayTarsStruct(tId, "tId");
+    _ds.DisplayInt(iAppId, "iAppId");
   }
 }
